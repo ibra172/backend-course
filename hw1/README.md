@@ -39,7 +39,7 @@
 
 ```bash
 # Запрос к нескольким серверам, вернет первый полученный ответ
-./hedgedcurl https://www.gosuslugi.ru https://www.prnhub.com https://memepedia.ru https://www.dota2.com
+./hedgedcurl https://www.gosuslugi.ru https://memepedia.ru https://www.dota2.com https://www.google.com/
 
 # С таймаутом 5 секунд
 ./hedgedcurl -t 5 https://httpbin.org/delay/1 https://httpbin.org/delay/10

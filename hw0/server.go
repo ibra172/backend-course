@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const shutdownTimeout time.Duration = 10 * time.Second
+const shutdownTimeout = 10 * time.Second
 
 func main() {
 	ctx, stop := signal.NotifyContext(
@@ -25,7 +25,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen on port 8080: %v", err)
 	}
-	defer listener.Close()
 
 	wg := sync.WaitGroup{}
 

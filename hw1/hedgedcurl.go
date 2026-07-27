@@ -34,7 +34,7 @@ func main() {
 		if errors.As(err, &flagsErr) && flagsErr.Type == flags.ErrHelp {
 			os.Exit(0)
 		}
-	
+
 		log.Fatalf("parse flags: %v", err)
 	}
 
@@ -53,40 +53,39 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	resultCh := make(chan Result, 1)
-
 	urlsNum := len(args)
-	errNum := 0
-	errDone := make(chan struct{}, 1)
+
+	resultsCh := make(chan Result, urlsNum)
 
 	for _, url := range args {
 		go func(url string) {
 			result := RunGetRequest(ctx, url)
-			if result.Error != nil {
-				log.Printf("[ERROR] - [%s] - %s\n", result.URL, result.Error.Error())
-				errNum++
-				if errNum == urlsNum {
-					errDone <- struct{}{}
-				}
-			} else {
-				select {
-				case resultCh <- result:
-				case <-ctx.Done():
-				}
+
+			select {
+			case resultsCh <- result:
+			case <-ctx.Done():
 			}
 		}(url)
 	}
 
-	select {
-	case res := <-resultCh:
-		fmt.Println(res.Info())
-		return
-	case <-ctx.Done():
-		log.Printf("[Timeout] - none of the servers responded within %v", timeout)
-		os.Exit(228)
-	case <-errDone:
-		log.Fatalln("all requests ended with an error")
+	for range urlsNum {
+		select {
+		case res := <-resultsCh:
+			if res.Error != nil {
+				log.Printf("[ERROR] - [%s] - %s\n", res.URL, res.Error.Error())
+				continue
+			}
+	
+			fmt.Println(res.Info())
+			return
+
+		case <-ctx.Done():
+			log.Printf("[Timeout] - none of the servers responded within %v", timeout)
+			os.Exit(228)
+		}
 	}
+
+	log.Fatalln("all requests ended with an error")
 }
 
 func (r Result) Info() string {

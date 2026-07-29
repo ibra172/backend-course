@@ -1,6 +1,6 @@
-module github.com/ibra172/backend-course/tree/hw1
+module github.com/ibra172/backend-course
 
-go 1.25.6
+go 1.25.0
 
 require github.com/jessevdk/go-flags v1.6.1
 

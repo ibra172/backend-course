@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jessevdk/go-flags"
@@ -75,8 +76,15 @@ func main() {
 				log.Printf("[ERROR] - [%s] - %s\n", res.URL, res.Error.Error())
 				continue
 			}
-	
-			fmt.Println(res.Info())
+
+			info, err := res.Info()
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+
+			fmt.Println(info)
+
 			return
 
 		case <-ctx.Done():
@@ -88,13 +96,18 @@ func main() {
 	log.Fatalln("all requests ended with an error")
 }
 
-func (r Result) Info() string {
-	return fmt.Sprintf("[%s]\n%s\n\u001B[1mResponse Header\033[0m:\n%v\n\u001B[1mResponse Body\033[0m:\n%v",
-		r.URL,
-		r.Status,
-		r.ResponseHeader,
-		string(r.ResponseBody),
-	)
+func (r Result) Info() (string, error) {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "[%s]\n%s\n\u001B[1mResponse Header\033[0m:\n", r.URL, r.Status)
+
+	if err := r.ResponseHeader.Write(&b); err != nil {
+		return "", fmt.Errorf("write response headers: %w", err)
+	}
+
+	fmt.Fprintf(&b, "\n\u001B[1mResponse Body\033[0m:\n%s", r.ResponseBody)
+
+	return b.String(), nil
 }
 
 func RunGetRequest(ctx context.Context, url string) Result {
@@ -110,8 +123,6 @@ func RunGetRequest(ctx context.Context, url string) Result {
 		result.Error = fmt.Errorf("create request: %w", err)
 		return result
 	}
-
-	req.Header.Set("Accept", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
